@@ -12,8 +12,22 @@ def reactive_obst_avoid(lidar):
     # TODO for TP1
 
     laser_dist = lidar.get_sensor_values()
-    speed = 0.0
-    rotation_speed = 0.0
+    ray_angles = lidar.get_ray_angles()
+
+    front_mask = np.abs(ray_angles) < np.deg2rad(45)
+
+    front_distances = laser_dist[front_mask]
+
+    min_front_distance = np.min(front_distances)
+
+    obstacle_threshold = 25.0  
+
+    if min_front_distance > obstacle_threshold:
+        speed = 0.7
+        rotation_speed = 0.0
+    else:
+        speed = 0.0
+        rotation_speed = 0.5
 
     command = {"forward": speed,
                "rotation": rotation_speed}
