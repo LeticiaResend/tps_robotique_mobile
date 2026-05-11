@@ -1,14 +1,8 @@
 """ A set of robotics control functions """
 
-import random
+
 from turtle import distance
 import numpy as np
-
-last_turn_direction = None
-stored_poses = []
-wall_following = False
-wall_following_direction = None
-
 
 
 def reactive_obst_avoid(lidar):

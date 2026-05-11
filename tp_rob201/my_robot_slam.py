@@ -69,7 +69,7 @@ class MyRobotSlam(RobotAbstract):
         Main control function with full SLAM, random exploration and path planning
         """
         pose = self.odometer_values()
-        goal = [-750, -30, 0]
+        goal = [-760, -30, 0]
 
         # Compute new command speed to perform obstacle avoidance
         command = potential_field_control(self.lidar(), pose, goal)
@@ -81,20 +81,36 @@ class MyRobotSlam(RobotAbstract):
         Build the occupancy map using raw odometry pose.
         No localisation correction — the map will drift, which is expected
         """
-        raw_pose = self.odometer_values()
+
+        raw_pose   = self.odometer_values()
         lidar_data = self.lidar()
-
-        goal = [-750, -30, 0]
-
-        if self.localise_counter >= 20 : 
-            current_score = self.tiny_slam.localise(lidar_data, raw_pose)
-        self.localise_counter += 1
-
-        self.corrected_pose = self.tiny_slam.get_corrected_pose(raw_pose)
-
-        self.tiny_slam.update_map(lidar_data, self.corrected_pose)
-
-        self.occupancy_grid.display_cv(self.corrected_pose, goal, None)
-
+ 
+        # Update map directly with raw odometry (no correction)
+        self.tiny_slam.update_map(lidar_data, raw_pose)
+        
+        self.occupancy_grid.display_cv(raw_pose)
+ 
         return self.control_tp2()
+        
 
+    def control_tp4(self):
+        """
+        Full SLAM loop: localise first, then update the map with the
+        corrected pose. The map should no longer drift.
+
+        """
+        raw_pose   = self.odometer_values()
+        lidar_data = self.lidar()
+ 
+        if self.counter > 20:
+            self.tiny_slam.localise(lidar_data, raw_pose)
+            
+        # --- Corrected pose: odom pose expressed in world frame ---
+        self.corrected_pose = self.tiny_slam.get_corrected_pose(raw_pose)
+ 
+        # --- Map update with corrected pose ---
+        self.tiny_slam.update_map(lidar_data, self.corrected_pose)
+ 
+        self.occupancy_grid.display_cv(self.corrected_pose)
+ 
+        return self.control_tp2()
