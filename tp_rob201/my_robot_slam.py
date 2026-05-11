@@ -45,12 +45,13 @@ class MyRobotSlam(RobotAbstract):
 
         # storage for pose after localization
         self.corrected_pose = np.array([0, 0, 0])
+        self.localise_counter = 0
 
     def control(self):
         """
         Main control function executed at each time step
         """
-        return self.control_tp2()
+        return self.control_tp3()
 
     def control_tp1(self):
         """
@@ -74,3 +75,26 @@ class MyRobotSlam(RobotAbstract):
         command = potential_field_control(self.lidar(), pose, goal)
 
         return command
+    
+    def control_tp3(self):
+        """
+        Build the occupancy map using raw odometry pose.
+        No localisation correction — the map will drift, which is expected
+        """
+        raw_pose = self.odometer_values()
+        lidar_data = self.lidar()
+
+        goal = [-750, -30, 0]
+
+        if self.localise_counter >= 20 : 
+            current_score = self.tiny_slam.localise(lidar_data, raw_pose)
+        self.localise_counter += 1
+
+        self.corrected_pose = self.tiny_slam.get_corrected_pose(raw_pose)
+
+        self.tiny_slam.update_map(lidar_data, self.corrected_pose)
+
+        self.occupancy_grid.display_cv(self.corrected_pose, goal, None)
+
+        return self.control_tp2()
+

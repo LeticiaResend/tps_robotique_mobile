@@ -56,16 +56,16 @@ def potential_field_control(lidar, current_pose, goal_pose):
     goal_y = goal_pose[1]
  
     K_goal = 1.0
- 
+    
+    # Vector from current position to goal
     dx = goal_x - current_x
     dy = goal_y - current_y
-
+    # Distance Euclidienne to the goal
     distance_to_goal = np.sqrt(dx**2 + dy**2)
- 
+    # If we are close enough to the goal, stop
     if distance_to_goal < 10.0:
         return {"forward": 0.0, "rotation": 0.0}
- 
-    
+    # Attractive potential gradient
     grad_att_x = (K_goal / distance_to_goal) * dx
     grad_att_y = (K_goal / distance_to_goal) * dy
    
