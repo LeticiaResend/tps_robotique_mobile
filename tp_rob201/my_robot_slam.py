@@ -51,7 +51,7 @@ class MyRobotSlam(RobotAbstract):
         """
         Main control function executed at each time step
         """
-        return self.control_tp4()
+        return self.control_tp5()
 
     def control_tp1(self):
         """
@@ -67,7 +67,7 @@ class MyRobotSlam(RobotAbstract):
         Main control function with full SLAM, random exploration and path planning
         """
         pose = self.odometer_values()
-        goal = [-450, -100, 0] # [-760, -30, 0]
+        goal =  [-600, -30, 0]
 
         # Compute new command speed to perform obstacle avoidance
         command = potential_field_control(self.lidar(), pose, goal)
@@ -114,3 +114,47 @@ class MyRobotSlam(RobotAbstract):
         self.counter += 1
  
         return self.control_tp2()
+
+    def control_tp5(self):
+
+        raw_pose = self.odometer_values()
+        lidar_data = self.lidar()
+
+        if self.counter < 800:
+
+            return self.control_tp4()
+
+        if self.counter == 800:
+
+            # Initial pose for the reverse path
+            self.corrected_pose = self.tiny_slam.get_corrected_pose(raw_pose)
+
+            start = self.corrected_pose[:2]
+            goal = [0, 0]
+
+            self.path = self.planner.plan(start, goal)
+
+            self.counter += 1
+
+        # Return to the initial position using the planned path, with potential field control for obstacle avoidance
+        if hasattr(self, 'path') and self.path:
+
+            self.corrected_pose = self.tiny_slam.get_corrected_pose(raw_pose)
+
+            path_array = np.array(self.path).T
+
+            self.occupancy_grid.display_cv( self.corrected_pose, traj=path_array)
+
+            target = np.array(self.path[0])
+
+            dist = np.linalg.norm( np.array(self.corrected_pose[:2]) - target)
+
+            # waypoint reached
+            if dist < 20:
+                self.path.pop(0)
+
+                # final goal reached
+                if len(self.path) == 0:
+                    return {"forward": 0, "rotation": 0}
+
+            return potential_field_control(lidar_data, self.corrected_pose, target)

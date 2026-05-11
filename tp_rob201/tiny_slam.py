@@ -109,13 +109,12 @@ class TinySlam:
         distances = np.asarray(lidar.get_sensor_values(), dtype=float)
         angles = np.asarray(lidar.get_ray_angles(), dtype=float)
 
-        # Log-odds increments: weak evidence for free space, stronger for obstacle.
-        free_update = -0.15
-        occ_update = 3
+        free_update = -0.5
+        occ_update = 5
         map_min = -20.0
         map_max = 20.0
 
-        # If available, use lidar max range to avoid adding false obstacles at range limit.
+        # Use lidar max range to avoid adding false obstacles at range limit.
         lidar_max_range = getattr(lidar, "max_range", np.inf)
 
         for distance, alpha in zip(distances, angles):
